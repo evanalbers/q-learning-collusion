@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "q-learning-collusion"
+version = "0.0.1"
+authors = [
+  { name="Evan Albers", email="evan.albers@reuben.ox.ac.uk" },
+]
+dependencies = [
+  "httpx",
+  "gidgethub[httpx]>4.0.0",
+  "django>2.1; os_name != 'nt'",
+  "django>2.0; os_name == 'nt'",
+  "torch",
+  "numpy",
+  "tqdm",
+  "numba",
+  "matplotlib",
+  "scipy",
+  
+   
+]
+description = "A package for evaluating AI using circuits"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://github.com/evanalbers/q-learning-collusion"
