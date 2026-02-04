@@ -49,47 +49,6 @@ def calc_price_ranges(nash, coop, ext, m):
     
     return np.array(price_ranges)
 
-
-def run_session(num_agents, alphas, betas, deltas,
-                a_arr, costs, mu, exts, nash, coop, m):
-    """ A script to replicate the results of the initial paper """
-
-    # calc prices for reward function
-    prices = calc_price_ranges(np.array(nash),
-                                np.array(coop),
-                                np.array(exts),
-                                m=m)
-
-    actions = [np.arange(start=0, stop=15, step=1, dtype=int),
-               np.arange(start=0, stop=15, step=1, dtype=int)]
-    
-
-    # assembling a_arr, cost array
-    a_arr = np.array(a_arr)
-    costs = np.array(costs)
-
-    # setting up agents 
-
-    n_states = (15, 15) # 15 possible prices, therefore 15 possible 
-                       # for each agents
-    n_actions = 15 # 15 possible prices for each agent
-
-    agents = []
-
-    # other parameters are default
-    for a in range(num_agents):
-        agents.append(Agent(n_states, n_actions, learning_rate=alphas[a],
-                            discount=deltas[a], beta=betas[a]))
-    
-    # setting up env. 
-
-    env = StandardMarketEnv(a_arr, costs, mu, 
-                            num_agents=2, actions=actions, rewards_matrix=prices)
-
-    # Training agents in env. 
-
-    train_agents(agents, env)
-
 def fast_session(num_agents, n_actions, n_demands, alphas, betas, deltas,
                 a_arr, costs, mu, exts, nash, coop, m):
     """ leverages fast training loop for speed """
