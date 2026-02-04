@@ -47,16 +47,19 @@ def fast_convergence_check(num_agents, num_actions, num_demands, q_tables,
         conv += (step - last_check_step)
         if conv >= conv_threshold:
             return True, prev_greedy_policies, conv
+    else:    
         conv = 0
         prev_greedy_policies = current_greedy_policies.copy()
 
     return False, prev_greedy_policies, conv
 
 
-@njit
+# @njit
 def fast_session(q_tables, params):
     
-    max_steps = params.steps_per_episode * params.episodes_per_session
+    max_steps = 100000000
+
+    a_arr = np.array(params.a_arr, dtype=np.float64)
 
     # initializing arrays to keep track of data
     action_data = np.zeros((max_steps, params.num_agents))
@@ -92,13 +95,13 @@ def fast_session(q_tables, params):
                 break
 
         # if it's a new episode, random previous action
-        if step % params.steps_per_episode == 0:
-            for i in range(params.num_agents):
-                state[i] = np.random.randint(params.num_actions)
+        # if step % params.steps_per_episode == 0:
+        #     for i in range(params.num_agents):
+        #         state[i] = np.random.randint(params.num_actions)
         
         # random draw for the demand state
         demand_state = next_demand
-        params.a_arr[0] = demand_state
+        a_arr[0] = demand_state
         demand_data[step] = demand_state
         next_demand = np.random.randint(0, 5)
 
@@ -118,7 +121,7 @@ def fast_session(q_tables, params):
 
         # for each agent, determine reward then save rewards
         for agent in range(params.num_agents):
-            rewards[agent] = fast_reward(params.a_arr, actions, agent, params.costs, params.mu, params.r_matrix)
+            rewards[agent] = fast_reward(a_arr, actions, agent, params.costs, params.mu, params.r_matrix)
         reward_data[step] = rewards
 
         # for each agent, calculate highest value next move, update Q tables accordingly

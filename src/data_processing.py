@@ -10,21 +10,18 @@ def discretize(vals, bins=20):
     return binned
 
 
-def entropy(vals, bins=20):
+def entropy(vals):
     """ calculates entropy of a series """
 
-    disc_vals = discretize(vals, bins)
-    counts = Counter(disc_vals)
+    counts = Counter(vals)
     n = len(vals)
     probs = np.array(list(counts.values())) / n
     return -np.sum(probs * np.log2(probs))
 
-def joint_entropy(variables, bins):
+def joint_entropy(variables):
     """ calculates joint entropy between prices, volume data """
 
-    disc_var = [discretize(v, bins) for v in variables]
-
-    tuples = list(zip(*disc_var))
+    tuples = list(zip(*variables))
 
     counts = Counter(tuples)
     n = len(tuples)
@@ -33,28 +30,28 @@ def joint_entropy(variables, bins):
 
     return -np.sum(probs * np.log2(probs))
 
-def conditional_mutual_info(volume, prices, signals, bins=20):
+def conditional_mutual_info(volume, prices, signals):
     """ calc. conditional mutual info between prices, volume given signals """
 
-    joint_entropy_vs = joint_entropy([volume, signals], bins)
+    joint_entropy_vs = joint_entropy([volume, signals])
     # print("H(V, S): " + str(joint_entropy_vs))
-    joint_entropy_ps = joint_entropy([prices, signals], bins)
+    joint_entropy_ps = joint_entropy([prices, signals])
     # print("H(P, S): " + str(joint_entropy_ps))
-    s_entropy = entropy(signals, bins)
+    s_entropy = entropy(signals)
     # print("H(S): " + str(s_entropy))
-    joint_entropy_vsp = joint_entropy([volume, signals, prices], bins)
+    joint_entropy_vsp = joint_entropy([volume, signals, prices])
     # print("H(V,S,P): " + str(joint_entropy_vsp))
 
     return joint_entropy_vs + joint_entropy_ps - s_entropy - joint_entropy_vsp
 
-def mutual_information(x, y, bins=20):
+def mutual_information(x, y):
     """ Calculate mutual information between two signals """
-    h_x = entropy(x, bins)
-    h_y = entropy(y, bins)
-    h_xy = joint_entropy([x, y], bins)
+    h_x = entropy(x)
+    h_y = entropy(y)
+    h_xy = joint_entropy([x, y])
     return h_x + h_y - h_xy
 
-def rolling_mutual_entropy(x, y, window_size, step=1, bins=20):
+def rolling_mutual_entropy(x, y, window_size, step=1):
     n = len(x)
     mi_values = []
     centers = []
@@ -64,7 +61,7 @@ def rolling_mutual_entropy(x, y, window_size, step=1, bins=20):
         x_window = x[start:end]
         y_window = y[start:end]
         
-        mi = mutual_information(x_window, y_window, bins)
+        mi = mutual_information(x_window, y_window)
         mi_values.append(mi)
         centers.append(start + window_size // 2)
     
@@ -78,11 +75,11 @@ def rolling_entropy(x, window_size, step, bins=20):
     for w in range(n_windows):
         start = w * step
         end = start + window_size
-        entropy_values[w] = entropy(x[start:end], bins)
+        entropy_values[w] = entropy(x[start:end])
     
     return entropy_values
 
-def rolling_conditional_mutual_information(x, y, z, window_size, step, bins=20):
+def rolling_conditional_mutual_information(x, y, z, window_size, step):
     n = len(x)
     cmi_values = []
     centers = []
@@ -97,7 +94,7 @@ def rolling_conditional_mutual_information(x, y, z, window_size, step, bins=20):
         y_window = y[start:end]
         z_window = z[start:end]
         
-        cmi = conditional_mutual_info(x_window, y_window, z_window, bins)
+        cmi = conditional_mutual_info(x_window, y_window, z_window)
         cmi_values.append(cmi)
         centers.append(start + window_size // 2)
     

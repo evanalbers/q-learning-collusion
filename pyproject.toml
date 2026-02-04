@@ -20,6 +20,8 @@ dependencies = [
   "matplotlib",
   "scipy",
   "h5py",
+  'tqdm-joblib',
+  'joblib',
    
 ]
 description = "A package for evaluating AI using circuits"

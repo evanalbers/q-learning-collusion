@@ -36,9 +36,19 @@ def plot_agent_data(data_filepath):
 
     cmi = conditional_mutual_info(agent_one_actions[1:], agent_two_actions[:-1], demands[1:])
     print(f"CMI of last 200k steps: {cmi}")
+    
 
     # rolling_cmi_1, centers_1 = rolling_conditional_mutual_information(agent_one_actions, agent_two_actions, demands, window_size=700000, step=5000)
     rolling_cmi_2, centers_2 = rolling_conditional_mutual_information(agent_one_actions[1:], agent_two_actions[:-1], demands[1:], window_size=10000, step=500)
+
+    print(f"Rolling CMI last few values: {rolling_cmi_2[-5:]}")
+    print(f"Rolling CMI centers last few: {centers_2[-5:]}")
+
+    cmi_end = conditional_mutual_info(agent_one_actions[-10000:], agent_two_actions[-10000:], demands[-10000:])
+    print(f"cmi_end computed: {cmi_end}")
+    print(agent_one_actions.shape)
+    print(agent_two_actions.shape)
+    print(demands.shape)
 
 
     # Create timesteps array
