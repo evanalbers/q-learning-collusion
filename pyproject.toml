@@ -19,7 +19,7 @@ dependencies = [
   "numba",
   "matplotlib",
   "scipy",
-  
+  "h5py",
    
 ]
 description = "A package for evaluating AI using circuits"

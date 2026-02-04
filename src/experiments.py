@@ -13,9 +13,10 @@ from env import StandardMarketEnv
 from train import train_agents, fast_episode
 import numpy as np
 from tqdm import tqdm
+import h5py
 
-alphas = [0.25, 0.25]
-betas = [0.2e-5, 0.2e-5]
+alphas = [0.05, 0.05]
+betas = [0.5e-5, 0.5e-5]
 deltas = [0.95, 0.95]
 a_arr = [0, 2, 2]
 costs = [1, 1]
@@ -89,7 +90,7 @@ def run_session(num_agents, alphas, betas, deltas,
 
     train_agents(agents, env)
 
-def fast_session(num_agents, n_actions, n_states, alphas, betas, deltas,
+def fast_session(num_agents, n_actions, n_demands, alphas, betas, deltas,
                 a_arr, costs, mu, exts, nash, coop, m):
     """ leverages fast training loop for speed """
 
@@ -97,10 +98,10 @@ def fast_session(num_agents, n_actions, n_states, alphas, betas, deltas,
     q_tables = []
     for agent in range(num_agents):
         q_tables.append(np.random.uniform(low=-0.01, high=0.01,   
-                                            size=(*n_states, n_actions)))
+                                            size=(n_actions, n_actions, n_demands)))
     q_tables = np.array(q_tables)
 
-    print(q_tables.shape)
+    # print(q_tables.shape)
 
     # r_matrix
     prices = calc_price_ranges(np.array(nash),
@@ -109,10 +110,16 @@ def fast_session(num_agents, n_actions, n_states, alphas, betas, deltas,
                                 m=m)
 
 
-    q_tables, step_conv = fast_episode(q_tables, num_agents, n_actions, betas, a_arr, costs,
-                mu, prices, deltas, alphas, 1000000000, 1e5)
+
+    q_tables, step_conv, action_data, reward_data, demand_data = fast_episode(q_tables, num_agents, n_actions, betas, a_arr, costs,
+            mu, prices, deltas, alphas, 10000000, 5)
+        
+    for opp in [0, 7, 14]:
+        actions_by_demand = [np.argmax(q_tables[0, opp, d, :]) for d in range(5)]
+        print(f"opp={opp}: {actions_by_demand}")
+
     
-    return q_tables, step_conv
+    return q_tables, step_conv, action_data, reward_data, demand_data
 
 
 
@@ -120,10 +127,15 @@ if __name__ == "__main__":
 
     # run_session(2, alphas, betas, deltas, a_arr, costs, mu, exts, nash, coop, m)
 
-    session_pbar = tqdm(range(1000), desc="Number of Sessions")
-    for episode in session_pbar:
+    with h5py.File('agentdata.h5', 'w') as f:    
 
-        q_tables, step_conv = fast_session(2, 15, (15, 15), alphas, betas, deltas, a_arr,
+        session_pbar = tqdm(range(10), desc="Number of Sessions")
+        for episode in session_pbar:
+
+            q_tables, step_conv, action_data, reward_data, demand_data = fast_session(2, 15, 5, alphas, betas, deltas, a_arr,
                     costs, mu, exts, nash, coop, m)
-        
-        print("Converged in " + str(step_conv) + " steps")
+                
+            f.create_dataset(f"actions_{episode}", data=action_data.T)
+            f.create_dataset(f"rewards_{episode}", data=reward_data.T)
+            f.create_dataset(f"demands_{episode}", data = demand_data.T)
+        # print("Converged in " + str(step_conv) + " steps")
