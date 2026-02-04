@@ -8,12 +8,12 @@ General flow:
 4. conduct visualization using data. 
 
 """
-from agent import Agent
-from env import StandardMarketEnv
-from train import train_agents, fast_episode
+
+from train import fast_session
 import numpy as np
 from tqdm import tqdm
 import h5py
+from collections import namedtuple
 
 alphas = [0.05, 0.05]
 betas = [0.5e-5, 0.5e-5]
@@ -26,6 +26,10 @@ nash = [1.47293, 1.47293]
 coop = [1.92498, 1.92498]
 m = 15
 
+Experiment_Params = namedtuple('Params', ('num_agents', 'num_actions', 'num_demands', 'alphas', 
+                                          'betas', 'deltas', 'a_arr', 'costs', 'mu', 'exts',
+                                           'nash', 'coop', 'steps_per_episode',
+                                            'episodes_per_session', 'r_matrix'))
 
 
 def calc_price_ranges(nash, coop, ext, m):
@@ -49,52 +53,67 @@ def calc_price_ranges(nash, coop, ext, m):
     
     return np.array(price_ranges)
 
-def fast_session(num_agents, n_actions, n_demands, alphas, betas, deltas,
-                a_arr, costs, mu, exts, nash, coop, m):
-    """ leverages fast training loop for speed """
+def generate_parameters():
+    """ generates set of parameters for testing """
 
-    # initializing agents as q_tables 
-    q_tables = []
-    for agent in range(num_agents):
-        q_tables.append(np.random.uniform(low=-0.01, high=0.01,   
-                                            size=(n_actions, n_actions, n_demands)))
-    q_tables = np.array(q_tables)
+    num_actions = 15
 
-    # print(q_tables.shape)
+    parameter_set = []
 
-    # r_matrix
     prices = calc_price_ranges(np.array(nash),
                                 np.array(coop),
                                 np.array(exts),
-                                m=m)
-
-
-
-    q_tables, step_conv, action_data, reward_data, demand_data = fast_episode(q_tables, num_agents, n_actions, betas, a_arr, costs,
-            mu, prices, deltas, alphas, 10000000, 5)
-        
-    for opp in [0, 7, 14]:
-        actions_by_demand = [np.argmax(q_tables[0, opp, d, :]) for d in range(5)]
-        print(f"opp={opp}: {actions_by_demand}")
-
+                                m=num_actions)
     
-    return q_tables, step_conv, action_data, reward_data, demand_data
+    alpha_range = np.linspace(0.025, 0.25, 100)
+    beta_range = np.linspace(0, 2e-5, 100)
 
+    for alpha in alpha_range:
+        for beta in beta_range: 
+            params = Experiment_Params(
+            num_agents=2,
+            num_actions=num_actions,
+            num_demands=5,
+            alphas=[alpha, alpha],
+            betas=[beta, beta],
+            deltas=[0.95, 0.95],
+            a_arr = [0, 2, 2],
+            costs=[1, 1],
+            mu=0.25,
+            exts=[0.1, 0.1],
+            nash=[1.47293, 1.47293],
+            coop=[1.92498, 1.92498],
+            steps_per_episode=25000,
+            episodes_per_session=10000,
+            r_matrix=prices)
+            parameter_set.append(params)
 
+    return parameter_set
 
 if __name__ == "__main__":
 
-    # run_session(2, alphas, betas, deltas, a_arr, costs, mu, exts, nash, coop, m)
+    parameter_set = generate_parameters()
 
-    with h5py.File('agentdata.h5', 'w') as f:    
+    with h5py.File('agentdata.h5', 'w') as f:   
 
-        session_pbar = tqdm(range(10), desc="Number of Sessions")
-        for episode in session_pbar:
+        experiment_pbar = tqdm(range(5000, len(parameter_set)), desc="Parameter set #...", position=0)
 
-            q_tables, step_conv, action_data, reward_data, demand_data = fast_session(2, 15, 5, alphas, betas, deltas, a_arr,
-                    costs, mu, exts, nash, coop, m)
-                
-            f.create_dataset(f"actions_{episode}", data=action_data.T)
-            f.create_dataset(f"rewards_{episode}", data=reward_data.T)
-            f.create_dataset(f"demands_{episode}", data = demand_data.T)
-        # print("Converged in " + str(step_conv) + " steps")
+        for experiment in experiment_pbar:
+
+            session_pbar = tqdm(range(10), desc="Number of Sessions", position=1, leave=False)
+            for session in session_pbar:
+
+                params = parameter_set[experiment]
+
+                # initializing agents as q_tables 
+                q_tables = []
+                for agent in range(params.num_agents):
+                    q_tables.append(np.random.uniform(low=-0.01, high=0.01,   
+                                                        size=(params.num_actions, params.num_actions, params.num_demands)))
+                q_tables = np.array(q_tables)
+
+                q_tables, step_conv, action_data, reward_data, demand_data = fast_session(q_tables, params)
+                    
+                f.create_dataset(f"actions_{session}", data=action_data.T)
+                f.create_dataset(f"rewards_{session}", data=reward_data.T)
+                f.create_dataset(f"demands_{session}", data = demand_data.T)
