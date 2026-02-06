@@ -96,9 +96,9 @@ def fast_session(q_tables, params):
                 break
 
         # if it's a new episode, random previous action
-        # if step % params.steps_per_episode == 0:
-        #     for i in range(params.num_agents):
-        #         state[i] = np.random.randint(params.num_actions)
+        if step % params.steps_per_episode == 0:
+            for i in range(params.num_agents):
+                state[i] = np.random.randint(params.num_actions)
         
         # random draw for the demand state
         demand_state = next_demand
