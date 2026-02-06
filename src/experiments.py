@@ -63,8 +63,8 @@ def generate_parameters():
                                 np.array(exts),
                                 m=num_actions)
     
-    alpha_range = np.linspace(0.025, 0.25, 15)
-    beta_range = np.linspace(0, 2e-5, 15)
+    alpha_range = np.linspace(0.025, 0.25, 50)
+    beta_range = np.linspace(0, 2e-5, 50)
 
     for alpha in alpha_range:
         for beta in beta_range: 
@@ -142,7 +142,7 @@ if __name__ == "__main__":
 
             params = parameter_set[experiment]
 
-            session_generator = Parallel(n_jobs=12, verbose=0, return_as='generator')(
+            session_generator = Parallel(n_jobs=64, verbose=0, return_as='generator')(
                 delayed(run_session)(params)
                 for num in range(1000)
             )
