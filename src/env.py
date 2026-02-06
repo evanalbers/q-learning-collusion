@@ -45,7 +45,7 @@ def fast_quantity(a_arr, prices, agent, mu):
         denom += np.exp((a_arr[i + 1] - prices[i]) / mu)
 
     return numerator / denom
-
+# 
 @njit
 def fast_reward(a_arr, state, agent, costs, mu, r_matrix):
 
@@ -56,7 +56,7 @@ def fast_reward(a_arr, state, agent, costs, mu, r_matrix):
     for i in range(len(state)):
         prices[i] = r_matrix[i, state[i]]
     
-    return (r_matrix[agent, state[agent]] - costs[agent]) * fast_quantity(a_arr, prices, agent, mu)
+    return (r_matrix[agent, state[agent]] - costs[agent]) * fast_quantity(a_arr, prices, agent, mu), r_matrix[agent, state[agent]] - costs[agent]
 
 @njit 
 def fast_monopolist_reward(a_arr, state, agent, costs, mu, r_matrix):

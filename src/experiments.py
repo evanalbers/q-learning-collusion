@@ -63,28 +63,28 @@ def generate_parameters():
                                 np.array(exts),
                                 m=num_actions)
     
-    alpha_range = np.linspace(0.1, 0.2, 5)
-    beta_range = np.linspace(2e-6, 1e-5, 5)
+    alpha_range = np.linspace(0.025, 0.25, 15)
+    beta_range = np.linspace(0, 2e-5, 15)
 
-    # for alpha in alpha_range:
-    #     for beta in beta_range: 
-    params = Experiment_Params(
-    num_agents=2,
-    num_actions=num_actions,
-    num_demands=5,
-    alphas=[0.05, 0.05],
-    betas=[0.5e-5, 0.5e-5],
-    deltas=[0.95, 0.95],
-    a_arr = [0, 2, 2],
-    costs=[1, 1],
-    mu=0.25,
-    exts=[0.1, 0.1],
-    nash=[1.47293, 1.47293],
-    coop=[1.92498, 1.92498],
-    steps_per_episode=25000,
-    episodes_per_session=10000,
-    r_matrix=prices)
-    parameter_set.append(params)
+    for alpha in alpha_range:
+        for beta in beta_range: 
+            params = Experiment_Params(
+            num_agents=2,
+            num_actions=num_actions,
+            num_demands=5,
+            alphas=[alpha, alpha],
+            betas=[beta, beta],
+            deltas=[0.95, 0.95],
+            a_arr = [0, 2, 2],
+            costs=[1, 1],
+            mu=0.25,
+            exts=[0.1, 0.1],
+            nash=[1.47293, 1.47293],
+            coop=[1.92498, 1.92498],
+            steps_per_episode=25000,
+            episodes_per_session=400,
+            r_matrix=prices)
+            parameter_set.append(params)
 
     print("Price matrix (r_matrix):")
     print(params.r_matrix)
@@ -101,88 +101,38 @@ def run_session(params):
                                             size=(params.num_actions, params.num_demands, params.num_actions)))
     q_tables = np.array(q_tables)
 
-    q_tables, step_conv, action_data, reward_data, demand_data = fast_session(q_tables, params)
+    q_tables, step_conv, action_data, reward_data, demand_data, profits = fast_session(q_tables, params)
 
-    average_profit = reward_data[-10000:].mean()
+    average_profit = profits[-10000:, 0].mean()
+    # print(profits[-10000:, 0])
+    # print(f"Average profit: {average_profit}")
 
-    delta = (average_profit - params.nash[0]) / (params.coop[0] - params.nash[0])
+    delta = (average_profit - (params.nash[0] - params.costs[0])) / ((params.coop[0] - params.costs[0]) - (params.nash[0] - params.costs[0]))
+    # print(f"Delta: {delta}")
 
-    cmi_beginning = conditional_mutual_info(action_data[:10000, 0].astype(int), action_data[:10000, 1].astype(int), demand_data[:10000].astype(int))
-    cmi_end = conditional_mutual_info(action_data[-10000:, 0].astype(int), action_data[-10000:, 1].astype(int), demand_data[-10000:].astype(int))
-    print(action_data.shape)
+    agent_one_actions = action_data[1:, 0]
+    agent_two_actions = action_data[:-1, 1]
+    demand_data = demand_data[1:]
+
+    cmi_beginning = conditional_mutual_info(agent_one_actions[:10000], agent_two_actions[:10000], demand_data[:10000])
+    cmi_end = conditional_mutual_info(agent_one_actions[-10000:], agent_two_actions[-10000:], demand_data[-10000:])
     cmi_delta = cmi_end - cmi_beginning
-    print(cmi_beginning)
-    print(cmi_end)
-    
-    x = action_data[140000:150000, 0].astype(int)
-    y = action_data[140000:150000, 1].astype(int)
-    z = demand_data[140000:150000].astype(int)
+    # print(cmi_beginning)
+    # print(cmi_end)
+    # print(cmi_delta)
 
-    # Call conditional_mutual_info twice on the SAME data
-    cmi_1 = conditional_mutual_info(x, y, z)
-    cmi_2 = conditional_mutual_info(x, y, z)
-
-    print(f"First call: {cmi_1}")
-    print(f"Second call: {cmi_2}")
-
-    cmi_rolling, centers = rolling_conditional_mutual_information(
-    action_data[:, 0].astype(int),
-    action_data[:, 1].astype(int),
-    demand_data.astype(int),
-    window_size=10000,
-    step=10000  # Large step so we only get a few values
-    )
-
-    print(f"Centers: {centers}")
-    print(f"Rolling CMIs: {cmi_rolling}")
-
-    # Manually compute for first center
-    c = centers[0]
-    x_man = action_data[c-5000:c+5000, 0].astype(int)
-    y_man = action_data[c-5000:c+5000, 1].astype(int)
-    z_man = demand_data[c-5000:c+5000].astype(int)
-    cmi_man = conditional_mutual_info(x_man, y_man, z_man)
-
-    print(f"Manual at center {c}: {cmi_man}")
-    print(f"Rolling at center {c}: {cmi_rolling[0]}")
-
-    print(f"demand_data[:10]: {demand_data[:10]}")
-    print(f"demand_data[-10:]: {demand_data[-10:]}")
-
-    # Check if action_data has weird values at the end
-    print(f"action_data[:10, :]: {action_data[:10, :]}")
-    print(f"action_data[-10:, :]: {action_data[-10:, :]}")
-
-    # Are there zeros or NaNs?
-    print(f"Zeros in demand_data[-10000:]: {np.sum(demand_data[-10000:] == 0)}")
-    print(f"Zeros in action_data[-10000:, 0]: {np.sum(action_data[-10000:, 0] == 0)}")
-    print(f"Zeros in action_data[-10000:, 1]: {np.sum(action_data[-10000:, 1] == 0)}")
-
-    x = action_data[-10000:, 0].copy()
-    y = action_data[-10000:, 1].copy()
-    z = demand_data[-10000:].copy()
-
-    print(f"x: {x[:5]} ... {x[-5:]}")
-    print(f"y: {y[:5]} ... {y[-5:]}")
-    print(f"z: {z[:5]} ... {z[-5:]}")
-
-    cmi_direct = conditional_mutual_info(x, y, z)
-    print(f"Direct CMI: {cmi_direct}")
-
-
-    return action_data, reward_data, demand_data
-
-    # {
-    #     'profit_delta' : delta,
-    #     'cmi_delta' : cmi_delta,
-    #     'converged' : 1 - (step_conv == 5000000 - 1)
-    # }
+    return {
+        'profit_delta' : delta,
+        'cmi_delta' : cmi_delta,
+        'converged' : 1 - (step_conv == params.steps_per_episode * params.episodes_per_session - 1),
+        'params' : params
+    }
 
 if __name__ == "__main__":
 
     parameter_set = generate_parameters()
 
-    with h5py.File('agentdata.h5', 'w') as f:   
+    with h5py.File('testdata.h5', 'w') as f:   
 
         results = {}
 
@@ -190,42 +140,52 @@ if __name__ == "__main__":
 
         for experiment in experiment_pbar:
 
-                params = parameter_set[experiment]
+            params = parameter_set[experiment]
 
-                action_data, reward_data, demand_data = run_session(params)
+            session_generator = Parallel(n_jobs=12, verbose=0, return_as='generator')(
+                delayed(run_session)(params)
+                for num in range(1000)
+            )
 
-                # session_generator = Parallel(n_jobs=8, verbose=0, return_as='generator')(
-                #     delayed(run_session)(params)
-                #     for num in range(50)
-                # )
+            session_results = list(tqdm(
+                session_generator,
+                total=1000,
+                desc='Sessions',
+                position=1,
+                leave=False
+            ))
 
-                # session_results = list(tqdm(
-                #     session_generator,
-                #     total=50,
-                #     desc='Sessions',
-                #     position=1,
-                #     leave=False
-                # ))
+            # session results 
+            cmi_delta = [r['cmi_delta'] for r in session_results]
+            profit_delta = [r['profit_delta'] for r in session_results]
+            converged = [r['converged'] for r in session_results]
+            results[(tuple(params.alphas), tuple(params.betas))] = {
+                'profit_delta_mean' : np.mean(profit_delta),
+                'profit_delta_std' : np.std(profit_delta),
+                'profit_deltas' : profit_delta,
+                'cmi_delta_mean' : np.mean(cmi_delta),
+                'cmi_delta_std' : np.std(cmi_delta),
+                'cmi_delta' : cmi_delta,
+                'fraction_converged' : np.mean(converged)
+            }
+            # print(results[(tuple(params.alphas), tuple(params.betas))]['cmi_delta'])
+            # print(results[((tuple(params.alphas), tuple(params.betas)))]['cmi_delta_mean'])
+            # print(f"Fraction converged {results[((tuple(params.alphas), tuple(params.betas)))]['fraction_converged']}")
 
-                # # session results 
-                # cmi_delta = [r['cmi_delta'] for r in session_results]
-                # profit_delta = [r['profit_delta'] for r in session_results]
-                # converged = [r['converged'] for r in session_results]
-                # results[(tuple(params.alphas), tuple(params.betas))] = {
-                #     'profit_delta_mean' : np.mean(profit_delta),
-                #     'profit_delta_std' : np.std(profit_delta),
-                #     'profit_deltas' : profit_delta,
-                #     'cmi_delta_mean' : np.mean(cmi_delta),
-                #     'cmi_delta_std' : np.std(cmi_delta),
-                #     'cmi_delta' : cmi_delta,
-                #     'fraction_converged' : np.mean(converged)
-                # }
+            f.create_dataset(f"cmi_deltas_{experiment}", data=results[(tuple(params.alphas), tuple(params.betas))]['cmi_delta'])
+            f.create_dataset(f"profit_deltas_{experiment}", data=results[(tuple(params.alphas), tuple(params.betas))]['profit_deltas'])
+            f.create_dataset(f"converged_{experiment}", data=results[(tuple(params.alphas), tuple(params.betas))]['fraction_converged'])
 
-                # print(results[((tuple(params.alphas), tuple(params.betas)))]['cmi_delta_mean'])
-                # print(f"Fraction converged {results[((tuple(params.alphas), tuple(params.betas)))]['fraction_converged']}")
+        params_group = f.create_group("params_set")
 
-                
-                    
-                f.create_dataset(f"actions_{0}", data=action_data.T)
-                f.create_dataset(f"rewards_{0}", data=reward_data.T)
-                f.create_dataset(f"demands_{0}", data = demand_data.T)
+        # For the first param set, get field names
+        field_names = parameter_set[0]._fields
+
+        for field in field_names:
+            data = [getattr(p, field) for p in parameter_set]
+            try:
+                params_group.create_dataset(field, data=data)
+            except (ValueError, TypeError):
+                # For complex fields like r_matrix, handle separately
+                params_group.create_dataset(field, data=np.array(data, dtype=object))
+        

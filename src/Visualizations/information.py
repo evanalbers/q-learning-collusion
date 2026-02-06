@@ -10,8 +10,10 @@ def plot_agent_data(data_filepath):
     # Load agent price, volume data
     with h5py.File(data_filepath, 'r') as f:
         agent_one_actions = f['actions_0'][0]
-        print(agent_one_actions.shape)
+        print(agent_one_actions[:100])
+        
         agent_two_actions = f['actions_0'][1]
+        print(agent_two_actions[:100])
         demands = f['demands_0'][:]
         print(demands.shape)
         # agent_one_rewards = f['rewards_0'][0][:200000]
@@ -40,16 +42,6 @@ def plot_agent_data(data_filepath):
 
     # rolling_cmi_1, centers_1 = rolling_conditional_mutual_information(agent_one_actions, agent_two_actions, demands, window_size=700000, step=5000)
     rolling_cmi_2, centers_2 = rolling_conditional_mutual_information(agent_one_actions[1:], agent_two_actions[:-1], demands[1:], window_size=10000, step=500)
-
-    print(f"Rolling CMI last few values: {rolling_cmi_2[-5:]}")
-    print(f"Rolling CMI centers last few: {centers_2[-5:]}")
-
-    cmi_end = conditional_mutual_info(agent_one_actions[-10000:], agent_two_actions[-10000:], demands[-10000:])
-    print(f"cmi_end computed: {cmi_end}")
-    print(agent_one_actions.shape)
-    print(agent_two_actions.shape)
-    print(demands.shape)
-
 
     # Create timesteps array
     timesteps = np.arange(len(agent_one_actions))
@@ -88,6 +80,58 @@ def plot_agent_data(data_filepath):
     return fig, axes
 
 
+def heatmap_cmi():
+
+    # Load the data
+    with h5py.File("testdata.h5", "r") as f:
+        # Get unique alpha and beta values
+        alphas_all = f["params_set/alphas"][:]
+        betas_all = f["params_set/betas"][:]
+        
+        # Extract first value from each (since they're pairs like [0.05, 0.05])
+        alphas = np.array([a[0] for a in alphas_all])
+        betas = np.array([b[0] for b in betas_all])
+        
+        unique_alphas = np.sort(np.unique(alphas))
+        unique_betas = np.sort(np.unique(betas))
+        
+        # Create 2D array for heatmap
+        heatmap_data = np.zeros((len(unique_alphas), len(unique_betas)))
+        
+        # Fill in the heatmap
+        for experiment in range(len(alphas)):
+            cmi_data = f[f"cmi_deltas_{experiment}"]
+            avg_cmi = np.mean(cmi_data)
+            print(avg_cmi)
+            
+            alpha_idx = np.where(unique_alphas == alphas[experiment])[0][0]
+            beta_idx = np.where(unique_betas == betas[experiment])[0][0]
+            
+            heatmap_data[alpha_idx, beta_idx] = avg_cmi
+
+    # Create the heatmap
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    im = ax.imshow(heatmap_data, aspect='auto', origin='lower', cmap='viridis')
+
+    # Set axis labels and ticks
+    ax.set_xticks(np.arange(len(unique_betas)))
+    ax.set_yticks(np.arange(len(unique_alphas)))
+    ax.set_xticklabels([f"{b:.1e}" for b in unique_betas], rotation=45, ha='right')
+    ax.set_yticklabels([f"{a:.3f}" for a in unique_alphas])
+
+    ax.set_xlabel("Beta")
+    ax.set_ylabel("Alpha")
+    ax.set_title("Average CMI Delta by Alpha and Beta")
+
+    # Add colorbar
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label("Average CMI Delta")
+
+    plt.tight_layout()
+    plt.savefig("cmi_heatmap.png", dpi=150)
+    plt.show()
+
 # Main execution
 if __name__ == "__main__":
     import sys
@@ -96,7 +140,9 @@ if __name__ == "__main__":
     output_directory = sys.argv[1] if len(sys.argv) > 1 else "."
     
     # Plot individual agent (example)
-    fig1, ax1 = plot_agent_data("agentdata.h5")
+    # fig1, ax1 = plot_agent_data("agentdata.h5")
+
+    heatmap_cmi()
 
     # fig2, ax2 = information_histogram(output_directory)
     

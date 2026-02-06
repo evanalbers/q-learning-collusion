@@ -54,10 +54,10 @@ def fast_convergence_check(num_agents, num_actions, num_demands, q_tables,
     return False, prev_greedy_policies, conv
 
 
-# @njit
+@njit
 def fast_session(q_tables, params):
     
-    max_steps = 100000000
+    max_steps = params.steps_per_episode * params.episodes_per_session
 
     a_arr = np.array(params.a_arr, dtype=np.float64)
 
@@ -65,6 +65,7 @@ def fast_session(q_tables, params):
     action_data = np.zeros((max_steps, params.num_agents))
     reward_data = np.zeros((max_steps, params.num_agents))
     demand_data = np.zeros(max_steps, dtype=np.int32)
+    profits_data = np.zeros((max_steps, params.num_agents))
 
     CHECK_INTERVAL = 1000  # Check every 1000 steps
     
@@ -108,6 +109,7 @@ def fast_session(q_tables, params):
         # initialize for this step's actions, rewards 
         actions = np.zeros(params.num_agents, dtype=np.int32)
         rewards = np.zeros(params.num_agents)
+        profits = np.zeros(params.num_agents)
         
         # for each agent, determine action, then save actions
         for agent in range(params.num_agents):
@@ -121,8 +123,9 @@ def fast_session(q_tables, params):
 
         # for each agent, determine reward then save rewards
         for agent in range(params.num_agents):
-            rewards[agent] = fast_reward(a_arr, actions, agent, params.costs, params.mu, params.r_matrix)
+            rewards[agent], profits[agent] = fast_reward(a_arr, actions, agent, params.costs, params.mu, params.r_matrix)
         reward_data[step] = rewards
+        profits_data[step] = profits
 
         # for each agent, calculate highest value next move, update Q tables accordingly
         old_state = state.copy()
@@ -135,7 +138,7 @@ def fast_session(q_tables, params):
         state = actions.copy()
     
     
-    return q_tables, step, action_data[:step, :].copy(), reward_data[:step, :].copy(), demand_data[:step].copy()
+    return q_tables, step, action_data[:step, :].copy(), reward_data[:step, :].copy(), demand_data[:step].copy(), profits_data[:step, :].copy()
 
 
 

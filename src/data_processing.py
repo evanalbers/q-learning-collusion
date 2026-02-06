@@ -84,7 +84,6 @@ def rolling_conditional_mutual_information(x, y, z, window_size, step):
     cmi_values = []
     centers = []
 
-    
     pbar = tqdm(range(0, n - window_size + 1, step), desc="Window count...")
 
     for start in pbar:
@@ -93,7 +92,7 @@ def rolling_conditional_mutual_information(x, y, z, window_size, step):
         x_window = x[start:end]
         y_window = y[start:end]
         z_window = z[start:end]
-        
+        # print(f"Window range: {start} to {end}")
         cmi = conditional_mutual_info(x_window, y_window, z_window)
         cmi_values.append(cmi)
         centers.append(start + window_size // 2)
