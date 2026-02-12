@@ -115,7 +115,10 @@ def fast_session(q_tables, params):
         for agent in range(params.num_agents):
             opp = 1 - agent
             # epsilon selection by agent
-            if np.random.random() < np.exp(-params.betas[agent] * step):
+            if params.competitve:
+                pass
+
+            elif np.random.random() < np.exp(-params.betas[agent] * step):
                 actions[agent] = np.random.randint(params.num_actions)
             else:
                 actions[agent] = argmax_1d(q_tables[agent, state[opp], demand_state], params.num_actions) # hard coded for two agents here

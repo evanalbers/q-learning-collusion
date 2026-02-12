@@ -114,11 +114,17 @@ def heatmap_cmi():
 
     im = ax.imshow(heatmap_data, aspect='auto', origin='lower', cmap='viridis')
 
+    num_ticks = 10
+    alpha_tick_indices = np.linspace(3, len(unique_alphas) - 1, num_ticks, dtype=int)
+    beta_tick_indices = np.linspace(0, len(unique_betas) - 1, num_ticks, dtype=int)
+    beta_labels = [unique_betas[i] for i in beta_tick_indices]
+    alpha_labels = [unique_alphas[i] for i in alpha_tick_indices]
+
     # Set axis labels and ticks
-    ax.set_xticks(np.arange(len(unique_betas)))
-    ax.set_yticks(np.arange(len(unique_alphas)))
-    ax.set_xticklabels([f"{b:.1e}" for b in unique_betas], rotation=45, ha='right')
-    ax.set_yticklabels([f"{a:.3f}" for a in unique_alphas])
+    ax.set_xticks(beta_tick_indices)
+    ax.set_yticks(alpha_tick_indices)
+    ax.set_xticklabels([f"{b:.1e}" for b in beta_labels], rotation=45, ha='right')
+    ax.set_yticklabels([f"{a:.3f}" for a in alpha_labels])
 
     ax.set_xlabel("Beta")
     ax.set_ylabel("Alpha")
