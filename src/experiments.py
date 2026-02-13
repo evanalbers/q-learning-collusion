@@ -209,7 +209,7 @@ if __name__ == "__main__":
 
             session_results = list(tqdm(
                 session_generator,
-                total=5,
+                total=10,
                 desc='Sessions',
                 position=1,
                 leave=False
