@@ -192,7 +192,7 @@ if __name__ == "__main__":
 
     parameter_set = generate_parameters()
 
-    with h5py.File('testdata.h5', 'w') as f:   
+    with h5py.File('profit_test_data.h5', 'w') as f:   
 
         results = {}
 
