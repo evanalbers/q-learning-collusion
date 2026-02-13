@@ -64,13 +64,13 @@ def fast_session(q_tables, params):
     # initializing arrays to keep track of data
     action_data = np.zeros((max_steps, params.num_agents))
     reward_data = np.zeros((max_steps, params.num_agents))
-    demand_data = np.zeros(max_steps, dtype=np.int32)
+    demand_data = np.zeros(max_steps)
     profits_data = np.zeros((max_steps, params.num_agents))
 
     CHECK_INTERVAL = 1000  # Check every 1000 steps
     
     # to assist with determining convergence 
-    prev_greedy_policies = np.zeros((params.num_agents, params.num_actions, params.num_demands), dtype=np.int32)
+    prev_greedy_policies = np.zeros((params.num_agents, params.num_actions, len(params.demand_values)), dtype=np.int32)
     conv = 0
     last_check_step = 0
     
@@ -80,7 +80,7 @@ def fast_session(q_tables, params):
         state[i] = np.random.randint(params.num_actions)
 
     # initializing demand here
-    next_demand = np.random.randint(0, 5)
+    next_demand = np.random.randint(len(params.demand_values))
 
     # during each step
     for step in range(max_steps):
@@ -88,7 +88,7 @@ def fast_session(q_tables, params):
         # Only check convergence periodically
         if step % CHECK_INTERVAL == 0 and step > 0:
             converged, prev_greedy_policies, conv = fast_convergence_check(params.num_agents, params.num_actions, 
-                                                                           params.num_demands, q_tables, step,
+                                                                           len(params.demand_values), q_tables, step,
                                                                            last_check_step,
                                                                            prev_greedy_policies, conv)
             last_check_step = step
@@ -102,9 +102,10 @@ def fast_session(q_tables, params):
         
         # random draw for the demand state
         demand_state = next_demand
-        a_arr[0] = demand_state
-        demand_data[step] = demand_state
-        next_demand = np.random.randint(0, 5)
+        a_arr[0] = params.demand_values[demand_state]
+        demand_data[step] = params.demand_values[demand_state]
+        next_demand = np.random.randint(len(params.demand_values))
+        
 
         # initialize for this step's actions, rewards 
         actions = np.zeros(params.num_agents, dtype=np.int32)
@@ -114,11 +115,7 @@ def fast_session(q_tables, params):
         # for each agent, determine action, then save actions
         for agent in range(params.num_agents):
             opp = 1 - agent
-            # epsilon selection by agent
-            if params.competitve:
-                pass
-
-            elif np.random.random() < np.exp(-params.betas[agent] * step):
+            if np.random.random() < np.exp(-params.betas[agent] * step):
                 actions[agent] = np.random.randint(params.num_actions)
             else:
                 actions[agent] = argmax_1d(q_tables[agent, state[opp], demand_state], params.num_actions) # hard coded for two agents here
