@@ -83,7 +83,7 @@ def plot_agent_data(data_filepath):
 def heatmap_cmi():
 
     # Load the data
-    with h5py.File("testdata.h5", "r") as f:
+    with h5py.File("profit_test_data.h5", "r") as f:
         # Get unique alpha and beta values
         alphas_all = f["params_set/alphas"][:]
         betas_all = f["params_set/betas"][:]
@@ -100,7 +100,7 @@ def heatmap_cmi():
         
         # Fill in the heatmap
         for experiment in range(len(alphas)):
-            cmi_data = f[f"cmi_deltas_{experiment}"]
+            cmi_data = f[f"profit_deltas_{experiment}"]
             avg_cmi = np.mean(cmi_data)
             print(avg_cmi)
             
@@ -128,11 +128,11 @@ def heatmap_cmi():
 
     ax.set_xlabel("Beta")
     ax.set_ylabel("Alpha")
-    ax.set_title("Average CMI Delta by Alpha and Beta")
+    ax.set_title("Average Profit Over 10 Sessions by Alpha, Beta")
 
     # Add colorbar
     cbar = plt.colorbar(im, ax=ax)
-    cbar.set_label("Average CMI Delta")
+    cbar.set_label("Average Profit")
 
     plt.tight_layout()
     plt.savefig("cmi_heatmap.png", dpi=150)
