@@ -202,7 +202,7 @@ if __name__ == "__main__":
 
             params = parameter_set[experiment]
 
-            session_generator = Parallel(n_jobs=8, verbose=0, return_as='generator')(
+            session_generator = Parallel(n_jobs=20, verbose=0, return_as='generator')(
                 delayed(run_session)(params)
                 for num in range(20)
             )
