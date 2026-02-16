@@ -136,7 +136,7 @@ def generate_parameters():
             demand_values=demand_range,
             alphas=[alpha, alpha],
             betas=[beta, beta],
-            deltas=[0.5, 0.5],
+            deltas=[0.99, 0.99],
             a_arr = a_arr,
             costs=costs,
             mu=mu,

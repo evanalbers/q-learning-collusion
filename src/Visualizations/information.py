@@ -100,7 +100,7 @@ def heatmap_cmi():
         
         # Fill in the heatmap
         for experiment in range(len(alphas)):
-            cmi_data = f[f"profit_deltas_{experiment}"]
+            cmi_data = f[f"cmi_deltas_{experiment}"]
             avg_cmi = np.mean(cmi_data)
             print(avg_cmi)
             
