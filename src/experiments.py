@@ -204,12 +204,12 @@ if __name__ == "__main__":
 
             session_generator = Parallel(n_jobs=8, verbose=0, return_as='generator')(
                 delayed(run_session)(params)
-                for num in range(10)
+                for num in range(20)
             )
 
             session_results = list(tqdm(
                 session_generator,
-                total=10,
+                total=20,
                 desc='Sessions',
                 position=1,
                 leave=False
